@@ -16,6 +16,7 @@
 
 package com.qingstor.sdk.request;
 
+import com.chengww.qingstor_sdk_android.QingstorHelper;
 import com.qingstor.sdk.constants.QSConstant;
 import com.qingstor.sdk.exception.QSException;
 import com.qingstor.sdk.model.OutputModel;
@@ -189,7 +190,7 @@ public class QSOkHttpRequestClient {
     }
 
     public OutputModel requestActionAsync(
-            Request request, boolean bSafe, final ResponseCallBack callBack) throws QSException {
+            Request request, boolean bSafe, final ResponseCallBack callBack) {
         Call okhttpCall = getRequestCall(bSafe, request);
         okhttpCall.enqueue(
                 new Callback() {
@@ -199,19 +200,23 @@ public class QSOkHttpRequestClient {
                     }
 
                     @Override
-                    public void onResponse(Call call, okhttp3.Response response)
-                            throws IOException {
+                    public void onResponse(Call call, okhttp3.Response response) {
                         try {
                             if (callBack != null) {
-                                OutputModel m = QSParamInvokeUtil.getOutputModel(callBack);
+                                final OutputModel m = QSParamInvokeUtil.getOutputModel(callBack);
                                 fillResponseValue2Object(response, m);
-                                callBack.onAPIResponse(m);
+                                QingstorHelper.getInstance().runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        callBack.onAPIResponse(m);
+                                    }
+                                });
                             }
                         } catch (Exception e) {
                             logger.log(Level.SEVERE, e.getMessage());
                             onOkhttpFailure(e, callBack);
                         } finally {
-                            if (response != null) {
+                            if (response.body() != null) {
                                 Util.closeQuietly(response.body().source());
                             }
                         }
@@ -220,24 +225,28 @@ public class QSOkHttpRequestClient {
         return null;
     }
 
-    private void onOkhttpFailure(Exception e, ResponseCallBack callBack) {
+    private void onOkhttpFailure(Exception e, final ResponseCallBack callBack) {
         try {
             if (callBack != null) {
                 //Check error code here.
                 int errorCode = QSConstant.REQUEST_ERROR_CODE;
                 if (e instanceof CancellationHandler.CancellationException)
                     errorCode = QSConstant.REQUEST_ERROR_CANCELLED; // Cancelled by users.
-                OutputModel m = QSParamInvokeUtil.getOutputModel(callBack);
+                final OutputModel m = QSParamInvokeUtil.getOutputModel(callBack);
                 fillResponseCallbackModel(errorCode, e.getMessage(), m);
-                callBack.onAPIResponse(m);
+                QingstorHelper.getInstance().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        callBack.onAPIResponse(m);
+                    }
+                });
             }
         } catch (Exception ee) {
             logger.log(Level.SEVERE, ee.getMessage());
         }
     }
 
-    private void fillResponseValue2Object(okhttp3.Response response, OutputModel target)
-            throws IOException {
+    private void fillResponseValue2Object(okhttp3.Response response, OutputModel target) {
         int code = response.code();
         ResponseBody body = response.body();
         JSONObject o = QSJSONUtil.toJSONObject("{}");

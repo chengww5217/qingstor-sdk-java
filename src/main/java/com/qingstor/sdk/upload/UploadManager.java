@@ -15,6 +15,7 @@
 // +-------------------------------------------------------------------------
 package com.qingstor.sdk.upload;
 
+import com.chengww.qingstor_sdk_android.QingstorHelper;
 import com.google.gson.Gson;
 import com.qingstor.sdk.annotation.ParamAnnotation;
 import com.qingstor.sdk.constants.QSConstant;
@@ -72,7 +73,7 @@ public class UploadManager {
         if (!file.exists() || file.isDirectory())
             throw new QSException("File does not exist or it is a directory.");
 
-        put(file, file.getName(), file.getName(), "");
+        put(file, file.getName(), null, "");
     }
 
     /**
@@ -132,10 +133,15 @@ public class UploadManager {
             // Initiate occurs an error.
             if (code < 200 || code >= 300) {
                 if (callBack != null) {
-                    OutputModel outputModel = new OutputModel();
+                    final OutputModel outputModel = new OutputModel();
                     outputModel.setStatueCode(code);
                     outputModel.setMessage(initOutput.getMessage());
-                    callBack.onAPIResponse(objectKey, outputModel);
+                    QingstorHelper.getInstance().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            callBack.onAPIResponse(objectKey, outputModel);
+                        }
+                    });
                 }
                 return;
             }
@@ -149,10 +155,15 @@ public class UploadManager {
             // Check status of the task.
             if (uploadModel.isUploadComplete()) {
                 if (callBack != null) {
-                    OutputModel outputModel = new OutputModel();
+                    final OutputModel outputModel = new OutputModel();
                     outputModel.setStatueCode(201);
                     outputModel.setMessage("This task has been uploaded.");
-                    callBack.onAPIResponse(objectKey, outputModel);
+                    QingstorHelper.getInstance().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            callBack.onAPIResponse(objectKey, outputModel);
+                        }
+                    });
                 }
                 return;
             }
@@ -192,8 +203,13 @@ public class UploadManager {
                     requestHandler.setProgressListener(new BodyProgressListener() {
                         @Override
                         public void onProgress(long len, long size) {
-                            long bytesWritten = uploadModel.getCurrentPart() * partSize + len;
-                            progressListener.onProgress(objectKey, bytesWritten, length);
+                            final long bytesWritten = uploadModel.getCurrentPart() * partSize + len;
+                            QingstorHelper.getInstance().runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    progressListener.onProgress(objectKey, bytesWritten, length);
+                                }
+                            });
                         }
                     });
                 }
@@ -205,14 +221,20 @@ public class UploadManager {
                 sign(requestHandler);
 
                 // Send the request.
-                OutputModel send = requestHandler.send();
+                final OutputModel send = requestHandler.send();
 
                 // Check response.
                 if (send.getStatueCode() != 200 && send.getStatueCode() != 201) { // Failed.
                     setData(objectKey, recorder);
                     // On upload failed
-                    if (callBack != null)
-                        callBack.onAPIResponse(objectKey, send);
+                    if (callBack != null) {
+                        QingstorHelper.getInstance().runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                callBack.onAPIResponse(objectKey, send);
+                            }
+                        });
+                    }
 
                     // Once failed, break the circle.
                     break;
@@ -268,7 +290,7 @@ public class UploadManager {
      * @param length length of the file
      * @throws QSException exception
      */
-    private void completeMultiUpload(String objectKey, String fileName, String eTag, String uploadID, long length) throws QSException {
+    private void completeMultiUpload(final String objectKey, String fileName, String eTag, String uploadID, long length) throws QSException {
         CompleteMultipartUploadInput completeMultipartUploadInput =
                 new CompleteMultipartUploadInput(uploadID, partCounts, 0);
 
@@ -295,7 +317,7 @@ public class UploadManager {
 
         sign(requestHandler);
 
-        Bucket.CompleteMultipartUploadOutput send =
+        final Bucket.CompleteMultipartUploadOutput send =
                 (Bucket.CompleteMultipartUploadOutput) requestHandler.send();
 
         if (send.getStatueCode() == 200 || send.getStatueCode() == 201) {
@@ -304,8 +326,14 @@ public class UploadManager {
         }
 
         // Response callback.
-        if (callBack != null)
-            callBack.onAPIResponse(objectKey, send);
+        if (callBack != null) {
+            QingstorHelper.getInstance().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    callBack.onAPIResponse(objectKey, send);
+                }
+            });
+        }
     }
 
     /**
@@ -318,7 +346,7 @@ public class UploadManager {
      * @throws QSException exception
      */
     public void putFile(File file, final String objectKey,
-                        String fileName, long length) throws QSException {
+                        String fileName, final long length) throws QSException {
         PutObjectInput input = new PutObjectInput();
         input.setContentLength(length);
         input.setBodyInputFile(file);
@@ -339,8 +367,13 @@ public class UploadManager {
         if (progressListener != null) {
             requestHandler.setProgressListener(new BodyProgressListener() {
                 @Override
-                public void onProgress(long len, long size) {
-                    progressListener.onProgress(objectKey, len, size);
+                public void onProgress(final long len, final long size) {
+                    QingstorHelper.getInstance().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            progressListener.onProgress(objectKey, len, size);
+                        }
+                    });
                 }
             });
         }
@@ -351,9 +384,15 @@ public class UploadManager {
         // Sign if needed.
         sign(requestHandler);
 
-        OutputModel outputModel = requestHandler.send();
-        if (callBack != null)
-            callBack.onAPIResponse(objectKey, outputModel);
+        final OutputModel outputModel = requestHandler.send();
+        if (callBack != null) {
+            QingstorHelper.getInstance().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    callBack.onAPIResponse(objectKey, outputModel);
+                }
+            });
+        }
     }
 
     public static class CompleteMultipartUploadInput
@@ -362,7 +401,7 @@ public class UploadManager {
 
         private Long contentLength;
 
-        @ParamAnnotation(paramType = "header", paramName = "Content-Length")
+        @ParamAnnotation(paramType = "header", paramName = "content-length")
         public Long getContentLength() {
             return contentLength;
         }

@@ -16,6 +16,7 @@
 
 package com.qingstor.sdk.utils;
 
+import com.google.gson.Gson;
 import com.qingstor.sdk.constants.QSConstant;
 import com.qingstor.sdk.exception.QSException;
 
@@ -92,18 +93,21 @@ public class QSStringUtil {
     }
 
     public static String getObjectToJson(Object o) {
-        JSONObject json = null;
+        JSONObject json;
         if (o instanceof Map) {
             json = new JSONObject();
-            Iterator iterator = ((Map) o).entrySet().iterator();
-            while (iterator.hasNext()) {
-                Map.Entry entry = (Map.Entry) iterator.next();
+            for (Object o1 : ((Map) o).entrySet()) {
+                Map.Entry entry = (Map.Entry) o1;
                 String key = (String) entry.getKey();
                 Object bodyObj = ((Map) o).get(key);
-                json.put(key, bodyObj);
+                try {
+                    json.put(key, bodyObj);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
             }
         } else {
-            json = new JSONObject(o);
+            return new Gson().toJson(o);
         }
 
         return json.toString();

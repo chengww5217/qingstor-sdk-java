@@ -213,7 +213,7 @@ public class QingStor {
         }
     }
 
-    public com.qingstor.sdk.service.Bucket getBucket(String bucketName, String zone) {
-        return new com.qingstor.sdk.service.Bucket(this.envContext, zone, bucketName);
+    public Bucket getBucket(String bucketName, String zone) {
+        return new Bucket(this.envContext, zone, bucketName);
     }
 }

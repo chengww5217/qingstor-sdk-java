@@ -16,14 +16,12 @@
 
 package com.qingstor.sdk.request;
 
-import com.qingstor.sdk.exception.QSException;
 import com.qingstor.sdk.model.OutputModel;
 
 public interface ResponseCallBack<O extends OutputModel> {
     /**
      *
      * @param output output extends OutputModel
-     * @throws QSException exception
      */
-    public void onAPIResponse(O output) throws QSException;
+    public void onAPIResponse(O output);
 }

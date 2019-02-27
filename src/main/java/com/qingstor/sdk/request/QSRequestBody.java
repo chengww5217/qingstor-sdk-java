@@ -25,5 +25,5 @@ import okhttp3.RequestBody;
 public interface QSRequestBody {
 
 	public RequestBody getRequestBody(String contentType, long contentLength,
-            String method, Map<String,Object> bodyParams,Map<String,Object> queryParams) throws QSException;
+                                      String method, Map<String, Object> bodyParams, Map<String, Object> queryParams) throws QSException;
 }
