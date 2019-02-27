@@ -17,16 +17,8 @@
 package com.qingstor.sdk.config;
 
 import com.qingstor.sdk.constants.QSConstant;
-import com.qingstor.sdk.exception.QSException;
 import com.qingstor.sdk.request.ParamValidate;
 import com.qingstor.sdk.utils.QSStringUtil;
-import org.yaml.snakeyaml.Yaml;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.util.Map;
 
 public class EnvContext implements ParamValidate {
 
@@ -173,46 +165,6 @@ public class EnvContext implements ParamValidate {
         this.setAccessSecret(accessSecret);
         this.setHost(qingcloudStorHost);
         QSConstant.LOGGER_LEVEL = this.getLog_level();
-    }
-
-    public static EnvContext loadFromFile(String filePathName) throws QSException {
-        EnvContext env = new EnvContext();
-        File f = new File(filePathName);
-        loadYaml(env, f);
-        return env;
-    }
-
-    public static void loadYaml(EnvContext env, File f) throws QSException {
-        if (f.exists()) {
-            BufferedReader br = null;
-
-            Yaml yaml = new Yaml();
-            try {
-                Map confParams = (Map) yaml.load(new FileInputStream(f));
-                env.setAccessKey(getYamlConfig("access_key_id", confParams));
-                env.setAccessSecret(getYamlConfig("secret_access_key", confParams));
-                env.setProtocol(getYamlConfig("protocol", confParams));
-                env.setHost(getYamlConfig("host", confParams));
-                env.setUri(getYamlConfig("uri", confParams));
-                env.setPort(getYamlConfig("port", confParams));
-                env.setLog_level(getYamlConfig("log_level", confParams));
-                env.setAdditionalUserAgent(getYamlConfig("additional_user_agent", confParams));
-                //load request url style form config
-                env.setRequestUrlStyle(getYamlConfig("request_url_style", confParams));
-
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-                throw new QSException("Yaml config error:", e);
-            }
-
-        }
-    }
-
-    public static String getYamlConfig(String key, Map config) {
-        if (config.containsKey(key)) {
-            return String.valueOf(config.get(key));
-        }
-        return null;
     }
 
     public String getLog_level() {

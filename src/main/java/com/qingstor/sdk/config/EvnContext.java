@@ -16,13 +16,9 @@
 
 package com.qingstor.sdk.config;
 
-import com.qingstor.sdk.exception.QSException;
-
-import java.io.File;
-
 /**
- * Deprecated, use {@link com.qingstor.sdk.config.EnvContext} instead. <br>
- * 已过时，请使用 {@link com.qingstor.sdk.config.EnvContext}
+ * Deprecated, use {@link EnvContext} instead. <br>
+ * 已过时，请使用 {@link EnvContext}
  */
 @Deprecated
 public class EvnContext extends EnvContext {
@@ -31,10 +27,4 @@ public class EvnContext extends EnvContext {
         super(accessKey, accessSecret);
     }
 
-    public static EvnContext loadFromFile(String filePathName) throws QSException {
-        EvnContext evn = new EvnContext("", "");
-        File f = new File(filePathName);
-        loadYaml(evn, f);
-        return evn;
-    }
 }
